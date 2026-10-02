@@ -713,6 +713,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, branch naming
 
 ---
 
-## License
 
-MIT License — see [LICENSE](LICENSE).
