@@ -1,0 +1,124 @@
+# ── JARVIS Runtime — Application Configuration ─────────────────────────────
+# Base configuration. Override with development.yaml or production.yaml.
+# Environment variables take precedence over values defined here.
+# Format: SECTION_SUBSECTION_KEY (e.g., DATABASE_NEO4J_URI)
+
+app:
+  name: jarvis-runtime
+  version: "0.1.0"
+  environment: development
+  debug: false
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: false
+  access_log: true
+
+# ── LLM Configuration ─────────────────────────────────────────────────────
+llm:
+  openai:
+    api_key: ""                          # Set via OPENAI_API_KEY env var
+    model: "gpt-4o"
+    embedding_model: "text-embedding-3-large"
+    timeout: 60.0
+    max_retries: 3
+    max_tokens: 4096
+    temperature: 0.0
+    streaming_temperature: 0.1
+
+# ── Database Configuration ────────────────────────────────────────────────
+database:
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    password: ""                         # Set via DATABASE_NEO4J_PASSWORD env var
+    database: "neo4j"
+    max_connection_pool_size: 50
+    connection_acquisition_timeout: 60
+    connection_timeout: 30
+
+  milvus:
+    uri: "http://localhost:19530"
+    token: ""                            # Set via DATABASE_MILVUS_TOKEN env var
+    timeout: 30.0
+    collections:
+      methods: "jarvis_methods"
+      classes: "jarvis_classes"
+      capabilities: "jarvis_capabilities"
+      readmes: "jarvis_readmes"
+      configs: "jarvis_configs"
+    search:
+      default_top_k: 10
+      max_top_k: 100
+      metric_type: "COSINE"
+      index_type: "IVF_FLAT"
+      nprobe: 10
+
+# ── Retrieval Configuration ───────────────────────────────────────────────
+retrieval:
+  hybrid:
+    enabled: true
+    graph_weight: 0.4
+    vector_weight: 0.6
+    rerank_method: "rrf"                 # Reciprocal Rank Fusion
+    rrf_k: 60
+  graph:
+    default_depth: 2
+    max_depth: 5
+    default_limit: 20
+  vector:
+    default_top_k: 10
+    similarity_threshold: 0.7
+
+# ── Workflow Configuration ────────────────────────────────────────────────
+workflow:
+  max_iterations: 3                      # Max reflection loop iterations
+  max_context_tokens: 8192
+  timeout_seconds: 120
+  execution_modes:
+    - READ
+    - WRITE
+    - HYBRID
+  
+  # Set to "AUTO", "READ", "WRITE", or "HYBRID" to bypass intent classification LLM
+  manual_intent_override: "AUTO"
+
+  nodes_enabled:
+    # 🟢 Fully Safe (Enhancements & Guards)
+    relevance: true
+    query_enhancement: true
+    reflection: true
+    validation: true
+    git_operations: true
+    # 🟡 Safe but Degrades Functionality (Context Providers)
+    hybrid_retrieval: true
+    repository_reader: true
+
+
+# ── Streaming Configuration ───────────────────────────────────────────────
+streaming:
+  max_queue_size: 1000
+  heartbeat_interval_seconds: 15
+  session_timeout_seconds: 300
+
+# ── Logging Configuration ─────────────────────────────────────────────────
+logging:
+  level: INFO
+  json: true
+  include_trace: true
+
+# ── Telemetry (Future) ────────────────────────────────────────────────────
+telemetry:
+  enabled: false
+  otlp_endpoint: ""
+  service_name: "jarvis-runtime"
+
+# ── Redis (Future) ────────────────────────────────────────────────────────
+redis:
+  enabled: false
+  uri: "redis://localhost:6379"
+  password: ""
+  db: 0
+  max_connections: 10

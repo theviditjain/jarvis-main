@@ -1,0 +1,135 @@
+version: "3.9"
+
+services:
+
+  # ── JARVIS Runtime ───────────────────────────────────────────────────────────
+  jarvis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: jarvis-runtime:latest
+    container_name: jarvis-runtime
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      JARVIS_ENV: development
+      PYTHONPATH: /app/src
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DATABASE_NEO4J_URI: bolt://host.docker.internal:7687
+      DATABASE_NEO4J_USER: neo4j
+      DATABASE_NEO4J_PASSWORD: ${NEO4J_PASSWORD:-devpassword}
+      DATABASE_MILVUS_URI: http://milvus:19530
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./logs:/app/logs
+    depends_on:
+      milvus:
+        condition: service_healthy
+    networks:
+      - jarvis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+
+  # ── Milvus ────────────────────────────────────────────────────────────────────
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: jarvis-etcd
+    restart: unless-stopped
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+    command: >
+      etcd
+      -advertise-client-urls=http://127.0.0.1:2379
+      -listen-client-urls=http://0.0.0.0:2379
+      --data-dir /etcd
+    volumes:
+      - etcd_data:/etcd
+    networks:
+      - jarvis-network
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-13T19-46-17Z
+    container_name: jarvis-minio
+    restart: unless-stopped
+    ports:
+      - "9001:9001"
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    command: minio server /minio_data --console-address ":9001"
+    volumes:
+      - minio_data:/minio_data
+    networks:
+      - jarvis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  milvus:
+    image: milvusdb/milvus:v2.4.0
+    container_name: jarvis-milvus
+    restart: unless-stopped
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    command: ["milvus", "run", "standalone"]
+    volumes:
+      - milvus_data:/var/lib/milvus
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - jarvis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 90s
+
+  # ── Redis (Future) ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: jarvis-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - jarvis-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full  # Only start with --profile full
+
+networks:
+  jarvis-network:
+    driver: bridge
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  milvus_data:
+  etcd_data:
+  minio_data:
+  redis_data:

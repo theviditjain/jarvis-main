@@ -1,0 +1,39 @@
+# ── JARVIS Runtime — Development Configuration ──────────────────────────────
+# Overrides application.yaml for the development environment.
+
+app:
+  debug: true
+
+server:
+  reload: true
+  workers: 1
+
+llm:
+  openai:
+    model: "gpt-4o"
+    max_retries: 1
+    timeout: 30.0
+
+database:
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    password: "devpassword"
+
+  milvus:
+    uri: ${DATABASE_MILVUS_URI:http://localhost:19530}
+
+  bigquery:
+    project_id: ${BIGQUERY_PROJECT:jarvis-development}
+    dataset_id: ${BIGQUERY_DATASET:jarvis_audits_dev}
+    table_id: ${BIGQUERY_TABLE:workflow_events}
+
+logging:
+  level: DEBUG
+  json: false                            # Human-readable logs for local dev
+
+telemetry:
+  enabled: false
+
+workflow:
+  timeout_seconds: 300                   # Longer timeout for debugging

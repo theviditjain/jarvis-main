@@ -1,0 +1,46 @@
+# ── JARVIS Runtime — Production Configuration ───────────────────────────────
+# Overrides application.yaml for the production environment.
+# All secrets MUST be provided via environment variables — never hardcoded here.
+
+app:
+  debug: false
+
+server:
+  workers: 4
+  reload: false
+
+llm:
+  openai:
+    # api_key: set via OPENAI_API_KEY
+    model: "gpt-4o"
+    max_retries: 5
+    timeout: 90.0
+
+database:
+  neo4j:
+    # uri: set via DATABASE_NEO4J_URI
+    # password: set via DATABASE_NEO4J_PASSWORD
+    max_connection_pool_size: 100
+
+  milvus:
+    # uri: set via DATABASE_MILVUS_URI
+    # token: set via DATABASE_MILVUS_TOKEN
+    timeout: 60.0
+
+logging:
+  level: INFO
+  json: true
+
+telemetry:
+  enabled: true
+  service_name: "jarvis-runtime"
+  # otlp_endpoint: set via TELEMETRY_OTLP_ENDPOINT
+
+workflow:
+  max_iterations: 5
+  timeout_seconds: 180
+
+redis:
+  enabled: true
+  # uri: set via REDIS_URI
+  max_connections: 50

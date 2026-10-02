@@ -1,0 +1,52 @@
+# ── JARVIS Runtime — Logging Configuration ──────────────────────────────────
+# Structlog configuration for the JARVIS runtime.
+# This file is loaded by infrastructure/telemetry/__init__.py.
+
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  json:
+    "()": structlog.stdlib.ProcessorFormatter
+    processor: structlog.processors.JSONRenderer
+  console:
+    "()": structlog.stdlib.ProcessorFormatter
+    processor: structlog.dev.ConsoleRenderer
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: console
+    stream: ext://sys.stdout
+  json_file:
+    class: logging.handlers.RotatingFileHandler
+    formatter: json
+    filename: logs/jarvis.log
+    maxBytes: 104857600  # 100 MB
+    backupCount: 10
+
+loggers:
+  jarvis:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  uvicorn:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  neo4j:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+  pymilvus:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+  openai:
+    level: WARNING
+    handlers: [console]
+    propagate: false
+
+root:
+  level: WARNING
+  handlers: [console]
