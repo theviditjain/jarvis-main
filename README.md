@@ -704,7 +704,6 @@ Interactive docs: `http://localhost:8000/docs`
 ## Authors & Maintainers
 
 - **Vidit Jain** — Lead Developer & Maintainer
-- **JARVIS Team** (<team@jarvis.dev>)
 
 ---
 
